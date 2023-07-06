@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"syscall/js"
 )
 
@@ -50,15 +51,13 @@ func main() {
 }
 
 func ftob(f float64) byte {
-	return byte(f * 255)
+	return byte(math.Max(0, math.Min(255, f*255+0.5)))
 }
 
 func render(framebuffer *Bitmap) {
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
-			framebuffer.Set(x, y, 0, ftob(float64(y)/float64(height)))
-			framebuffer.Set(x, y, 1, ftob(float64(x)/float64(width)))
-			framebuffer.Set(x, y, 3, 0xFF)
+			framebuffer.SetPixel(x, y, Vec3f{float64(y) / float64(height), float64(x) / float64(width), 0})
 		}
 	}
 }

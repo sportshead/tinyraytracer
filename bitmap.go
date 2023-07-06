@@ -42,3 +42,29 @@ func (b *Bitmap) Get(x, y, index int) (byte, error) {
 	}
 	return b.data[(y*b.width+x)*4+index], nil
 }
+
+func (b *Bitmap) SetPixel(x, y int, color Vec3f) error {
+	if x < 0 || x >= b.width || y < 0 || y >= b.height {
+		return errors.New("out of range")
+	}
+	for i := 0; i < 3; i++ {
+		b.Set(x, y, i, ftob(color[i]))
+	}
+	b.Set(x, y, 3, 0xFF)
+	return nil
+}
+
+func (b *Bitmap) GetPixel(x, y int) (Vec3f, error) {
+	if x < 0 || x >= b.width || y < 0 || y >= b.height {
+		return Vec3f{}, errors.New("out of range")
+	}
+	var color Vec3f
+	for i := 0; i < 3; i++ {
+		value, err := b.Get(x, y, i)
+		if err != nil {
+			return Vec3f{}, err
+		}
+		color[i] = float64(value) / 255
+	}
+	return color, nil
+}
