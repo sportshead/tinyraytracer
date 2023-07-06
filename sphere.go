@@ -3,16 +3,17 @@ package main
 import "math"
 
 type Sphere struct {
-	center Vec3f
-	radius float64
+	Center   Vec3f
+	Radius   float64
+	Material Material
 }
 
 // math i dont understand
 func (s *Sphere) RayIntersect(orig, dir Vec3f) (float64, bool) {
-	L := s.center.Sub(orig)
+	L := s.Center.Sub(orig)
 	tca := L.Dot(dir)
 	d2 := L.Dot(L) - tca*tca
-	rSq := s.radius * s.radius
+	rSq := s.Radius * s.Radius
 	if d2 > rSq {
 		return 0, false
 	}
