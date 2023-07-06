@@ -15,6 +15,10 @@ func (v Vec3f) Sub(other Vec3f) Vec3f {
 	return Vec3f{v[0] - other[0], v[1] - other[1], v[2] - other[2]}
 }
 
+func (v Vec3f) Mul(f float64) Vec3f {
+	return Vec3f{v[0] * f, v[1] * f, v[2] * f}
+}
+
 func (v Vec3f) Dot(other Vec3f) float64 {
 	return v[0]*other[0] + v[1]*other[1] + v[2]*other[2]
 }
