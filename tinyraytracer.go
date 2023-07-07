@@ -70,8 +70,7 @@ func sceneIntersect(orig, dir Vec3f, spheres []Sphere) (hit Vec3f, N Vec3f, mate
 		dist, rayIntersect := sphere.RayIntersect(orig, dir)
 		if rayIntersect && dist < spheresDist {
 			spheresDist = dist
-			dd := dir.Dot(Vec3f{dist, dist, dist})
-			hit = orig.Add(Vec3f{dd, dd, dd})
+			hit = orig.Add(dir.Mul(dist))
 			N = hit.Sub(sphere.Center).Normalize()
 			material = sphere.Material
 		}
