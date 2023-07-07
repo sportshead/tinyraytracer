@@ -8,7 +8,6 @@ type Sphere struct {
 	Material Material
 }
 
-// math i dont understand
 func (s *Sphere) RayIntersect(orig, dir Vec3f) (float64, bool) {
 	L := s.Center.Sub(orig)
 	tca := L.Dot(dir)
