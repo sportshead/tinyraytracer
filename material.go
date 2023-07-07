@@ -1,7 +1,8 @@
 package main
 
 type Material struct {
-	Albedo           Vec3f
+	RefractiveIndex  float64
+	Albedo           Vec4f
 	DiffuseColor     Vec3f
 	SpecularExponent float64
 }

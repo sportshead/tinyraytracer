@@ -75,6 +75,21 @@ func (v Vec3f) Reflect(N Vec3f) Vec3f {
 	return v.Sub(N.Mul(2.0 * v.Dot(N)))
 }
 
+func (I Vec3f) Refract(N Vec3f, eta_t, eta_i float64) Vec3f {
+	cosi := -math.Max(-1, math.Min(1, I.Dot(N)))
+	if cosi < 0 {
+		// if the ray comes from the inside the object, swap the air and the media
+		return I.Refract(N.Mul(-1), eta_i, eta_t)
+	}
+	eta := eta_i / eta_t
+	k := 1 - eta*eta*(1-cosi*cosi)
+	if k < 0 {
+		// k<0 = total reflection, no ray to refract.
+		return Vec3f{1, 0, 0}
+	}
+	return I.Mul(eta).Add(N.Mul(eta*cosi - math.Sqrt(k)))
+}
+
 type Vec4f [4]float64
 
 func (v Vec4f) Add(other Vec4f) Vec4f {
