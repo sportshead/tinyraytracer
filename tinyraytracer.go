@@ -36,7 +36,11 @@ func main() {
 		{Vec3f{7, 5, -18}, 4, ivory},
 	}
 
-	framebuffer := render(spheres)
+	lights := []Light{
+		{Vec3f{-20, 20, 20}, 1.5},
+	}
+
+	framebuffer := render(spheres, lights)
 
 	jsbuffer := js.Global().Get("Uint8ClampedArray").New(len(framebuffer.Data()))
 	js.CopyBytesToJS(jsbuffer, framebuffer.Data())
@@ -79,15 +83,20 @@ func sceneIntersect(orig, dir Vec3f, spheres []Sphere) (hit Vec3f, N Vec3f, mate
 	return
 }
 
-func castRay(orig, dir Vec3f, spheres []Sphere) Vec3f {
-	_, _, material, intersect := sceneIntersect(orig, dir, spheres)
+func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light) Vec3f {
+	point, N, material, intersect := sceneIntersect(orig, dir, spheres)
 	if !intersect {
 		return Vec3f{0.2, 0.7, 0.8} // background color
 	}
-	return material.DiffuseColor
+	diffuseLightIntensity := 0.0
+	for _, light := range lights {
+		lightDir := light.Position.Sub(point).Normalize()
+		diffuseLightIntensity += light.Intensity * math.Max(0, lightDir.Dot(N))
+	}
+	return material.DiffuseColor.Mul(diffuseLightIntensity)
 }
 
-func render(spheres []Sphere) Bitmap {
+func render(spheres []Sphere, lights []Light) Bitmap {
 	framebuffer := NewBitmap(width, height)
 
 	for j := 0; j < height; j++ {
@@ -95,7 +104,7 @@ func render(spheres []Sphere) Bitmap {
 			x := (2*(float64(i)+0.5)/float64(width) - 1) * math.Tan(fov/2) * float64(width) / float64(height)
 			y := -(2*(float64(j)+0.5)/float64(height) - 1) * math.Tan(fov/2)
 			dir := (Vec3f{x, y, -1}).Normalize()
-			framebuffer.SetPixel(i, j, castRay(Vec3f{0, 0, 0}, dir, spheres))
+			framebuffer.SetPixel(i, j, castRay(Vec3f{0, 0, 0}, dir, spheres, lights))
 		}
 	}
 
