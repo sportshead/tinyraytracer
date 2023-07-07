@@ -26,14 +26,15 @@ func main() {
 	canvas.Set("width", width)
 	canvas.Set("height", height)
 
-	ivory := Material{Vec2f{0.6, 0.3}, Vec3f{0.4, 0.4, 0.3}, 50}
-	redRubber := Material{Vec2f{0.9, 0.1}, Vec3f{0.3, 0.1, 0.1}, 10}
+	ivory := Material{Vec3f{0.6, 0.3, 0.1}, Vec3f{0.4, 0.4, 0.3}, 50}
+	redRubber := Material{Vec3f{0.9, 0.1, 0.0}, Vec3f{0.3, 0.1, 0.1}, 10}
+	mirror := Material{Vec3f{0, 10, 0.8}, Vec3f{1, 1, 1}, 1425}
 
 	spheres := []Sphere{
 		{Vec3f{-3, 0, -16}, 2, ivory},
-		{Vec3f{-1, -1.5, -12}, 2, redRubber},
+		{Vec3f{-1, -1.5, -12}, 2, mirror},
 		{Vec3f{1.5, -0.5, -18}, 3, redRubber},
-		{Vec3f{7, 5, -18}, 4, ivory},
+		{Vec3f{7, 5, -18}, 4, mirror},
 	}
 
 	lights := []Light{
@@ -85,11 +86,21 @@ func sceneIntersect(orig, dir Vec3f, spheres []Sphere) (hit Vec3f, N Vec3f, mate
 	return
 }
 
-func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light) Vec3f {
+func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light, depth int) Vec3f {
 	point, N, material, intersect := sceneIntersect(orig, dir, spheres)
-	if !intersect {
+	if depth > 4 || !intersect {
 		return Vec3f{0.2, 0.7, 0.8} // background color
 	}
+
+	reflectDir := dir.Reflect(N)
+	reflectOrig := point
+	if reflectDir.Dot(N) < 0 {
+		reflectOrig = reflectOrig.Sub(N.Mul(1e-3))
+	} else {
+		reflectOrig = reflectOrig.Add(N.Mul(1e-3))
+	}
+	reflectColor := castRay(reflectOrig, reflectDir, spheres, lights, depth+1)
+
 	diffuseLightIntensity := 0.0
 	specularLightIntensity := 0.0
 	for _, light := range lights {
@@ -111,7 +122,7 @@ func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light) Vec3f {
 		diffuseLightIntensity += light.Intensity * math.Max(0, lightDir.Dot(N))
 		specularLightIntensity += light.Intensity * math.Pow(math.Max(0, lightDir.Reflect(N).Dot(dir)), material.SpecularExponent)
 	}
-	return material.DiffuseColor.Mul(diffuseLightIntensity * material.Albedo[0]).Add(Vec3f{1.0, 1.0, 1.0}.Mul(specularLightIntensity * material.Albedo[1]))
+	return material.DiffuseColor.Mul(diffuseLightIntensity * material.Albedo[0]).Add(Vec3f{1.0, 1.0, 1.0}.Mul(specularLightIntensity * material.Albedo[1])).Add(reflectColor.Mul(material.Albedo[2]))
 }
 
 func render(spheres []Sphere, lights []Light) Bitmap {
@@ -122,7 +133,7 @@ func render(spheres []Sphere, lights []Light) Bitmap {
 			x := (2*(float64(i)+0.5)/float64(width) - 1) * math.Tan(fov/2) * float64(width) / float64(height)
 			y := -(2*(float64(j)+0.5)/float64(height) - 1) * math.Tan(fov/2)
 			dir := (Vec3f{x, y, -1}).Normalize()
-			framebuffer.SetPixel(i, j, castRay(Vec3f{0, 0, 0}, dir, spheres, lights))
+			framebuffer.SetPixel(i, j, castRay(Vec3f{0, 0, 0}, dir, spheres, lights, 0))
 		}
 	}
 
