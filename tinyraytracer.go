@@ -10,13 +10,9 @@ const fov = math.Pi / 2
 var (
 	width  int
 	height int
-
-	console js.Value
 )
 
 func main() {
-	console = js.Global().Get("console")
-
 	canvas := js.Global().Get("document").Call("getElementById", "main")
 	ctx := canvas.Call("getContext", "bitmaprenderer")
 
@@ -52,7 +48,7 @@ func main() {
 		width,
 		height,
 	)
-	//console.Call("log", imageData)
+
 	imageBitmap := js.Global().Call("createImageBitmap", imageData)
 
 	done := make(chan js.Value)
