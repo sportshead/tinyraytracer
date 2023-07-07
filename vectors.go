@@ -70,3 +70,7 @@ func (v Vec3f) Normalize() Vec3f {
 func (v Vec3f) String() string {
 	return fmt.Sprintf("(%f, %f, %f)", v[0], v[1], v[2])
 }
+
+func (v Vec3f) Reflect(N Vec3f) Vec3f {
+	return v.Sub(N.Mul(2.0 * v.Dot(N)))
+}
