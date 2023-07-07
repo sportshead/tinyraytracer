@@ -74,3 +74,34 @@ func (v Vec3f) String() string {
 func (v Vec3f) Reflect(N Vec3f) Vec3f {
 	return v.Sub(N.Mul(2.0 * v.Dot(N)))
 }
+
+type Vec4f [4]float64
+
+func (v Vec4f) Add(other Vec4f) Vec4f {
+	return Vec4f{v[0] + other[0], v[1] + other[1], v[2] + other[2], v[3] + other[3]}
+}
+
+func (v Vec4f) Sub(other Vec4f) Vec4f {
+	return Vec4f{v[0] - other[0], v[1] - other[1], v[2] - other[2], v[3] - other[3]}
+}
+
+func (v Vec4f) Mul(f float64) Vec4f {
+	return Vec4f{v[0] * f, v[1] * f, v[2] * f, v[3] * f}
+}
+
+func (v Vec4f) Dot(other Vec4f) float64 {
+	return v[0]*other[0] + v[1]*other[1] + v[2]*other[2] + v[3]*other[3]
+}
+
+func (v Vec4f) Norm() float64 {
+	return math.Sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3])
+}
+
+func (v Vec4f) Normalize() Vec4f {
+	l := v.Norm()
+	return Vec4f{v[0] / l, v[1] / l, v[2] / l, v[3] / l}
+}
+
+func (v Vec4f) String() string {
+	return fmt.Sprintf("(%f, %f, %f, %f)", v[0], v[1], v[2], v[3])
+}
