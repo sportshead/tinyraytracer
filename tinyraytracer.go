@@ -82,6 +82,13 @@ func sceneIntersect(orig, dir Vec3f, spheres []Sphere) (hit Vec3f, N Vec3f, mate
 	return
 }
 
+func calcOrig(dir, point, N Vec3f) Vec3f {
+	if dir.Dot(N) < 0 {
+		return point.Sub(N.Mul(1e-3))
+	}
+	return point.Add(N.Mul(1e-3))
+}
+
 func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light, depth int) Vec3f {
 	point, N, material, intersect := sceneIntersect(orig, dir, spheres)
 	if depth > 4 || !intersect {
@@ -89,12 +96,7 @@ func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light, depth int) Vec3f
 	}
 
 	reflectDir := dir.Reflect(N)
-	reflectOrig := point
-	if reflectDir.Dot(N) < 0 {
-		reflectOrig = reflectOrig.Sub(N.Mul(1e-3))
-	} else {
-		reflectOrig = reflectOrig.Add(N.Mul(1e-3))
-	}
+	reflectOrig := calcOrig(reflectDir, point, N)
 	reflectColor := castRay(reflectOrig, reflectDir, spheres, lights, depth+1)
 
 	diffuseLightIntensity := 0.0
@@ -103,12 +105,7 @@ func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light, depth int) Vec3f
 		lightDir := light.Position.Sub(point).Normalize()
 		lightDistance := light.Position.Sub(point).Norm()
 
-		shadowOrig := point
-		if lightDir.Dot(N) < 0 {
-			shadowOrig = shadowOrig.Sub(N.Mul(1e-3))
-		} else {
-			shadowOrig = shadowOrig.Add(N.Mul(1e-3))
-		}
+		shadowOrig := calcOrig(lightDir, point, N)
 
 		shadowPt, _, _, shadowIntersect := sceneIntersect(shadowOrig, lightDir, spheres)
 		if shadowIntersect && shadowPt.Sub(shadowOrig).Norm() < lightDistance {
