@@ -26,8 +26,8 @@ func main() {
 	canvas.Set("width", width)
 	canvas.Set("height", height)
 
-	ivory := Material{Vec3f{0.4, 0.4, 0.3}}
-	redRubber := Material{Vec3f{0.3, 0.1, 0.1}}
+	ivory := Material{Vec2f{0.6, 0.3}, Vec3f{0.4, 0.4, 0.3}, 50}
+	redRubber := Material{Vec2f{0.9, 0.1}, Vec3f{0.3, 0.1, 0.1}, 10}
 
 	spheres := []Sphere{
 		{Vec3f{-3, 0, -16}, 2, ivory},
@@ -38,6 +38,8 @@ func main() {
 
 	lights := []Light{
 		{Vec3f{-20, 20, 20}, 1.5},
+		{Vec3f{30, 50, -25}, 1.8},
+		{Vec3f{30, 20, 30}, 1.7},
 	}
 
 	framebuffer := render(spheres, lights)
@@ -89,11 +91,13 @@ func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light) Vec3f {
 		return Vec3f{0.2, 0.7, 0.8} // background color
 	}
 	diffuseLightIntensity := 0.0
+	specularLightIntensity := 0.0
 	for _, light := range lights {
 		lightDir := light.Position.Sub(point).Normalize()
 		diffuseLightIntensity += light.Intensity * math.Max(0, lightDir.Dot(N))
+		specularLightIntensity += light.Intensity * math.Pow(math.Max(0, lightDir.Reflect(N).Dot(dir)), material.SpecularExponent)
 	}
-	return material.DiffuseColor.Mul(diffuseLightIntensity)
+	return material.DiffuseColor.Mul(diffuseLightIntensity * material.Albedo[0]).Add(Vec3f{1.0, 1.0, 1.0}.Mul(specularLightIntensity * material.Albedo[1]))
 }
 
 func render(spheres []Sphere, lights []Light) Bitmap {
