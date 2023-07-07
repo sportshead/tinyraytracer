@@ -21,6 +21,7 @@
     <canvas id="main"></canvas>
     <script>
         const go = new Go();
+        go.debug = false; // for some reason 5 console.logs get created per goroutine if this is true, which kills perf
         WebAssembly.instantiateStreaming(fetch("tinyraytracer.wasm"), go.importObject).then((result) => {
             go.run(result.instance);
         });

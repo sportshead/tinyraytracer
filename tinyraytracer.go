@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"sync"
 	"syscall/js"
 )
 
@@ -150,14 +151,22 @@ func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light, depth int) Vec3f
 func render(spheres []Sphere, lights []Light) Bitmap {
 	framebuffer := NewBitmap(width, height)
 
+	wg := sync.WaitGroup{}
+	wg.Add(height)
 	for j := 0; j < height; j++ {
-		for i := 0; i < width; i++ {
-			x := (2*(float64(i)+0.5)/float64(width) - 1) * math.Tan(fov/2) * float64(width) / float64(height)
-			y := -(2*(float64(j)+0.5)/float64(height) - 1) * math.Tan(fov/2)
-			dir := (Vec3f{x, y, -1}).Normalize()
-			framebuffer.SetPixel(i, j, castRay(Vec3f{0, 0, 0}, dir, spheres, lights, 0))
-		}
+		go func(j int) {
+			for i := 0; i < width; i++ {
+				x := (2*(float64(i)+0.5)/float64(width) - 1) * math.Tan(fov/2) * float64(width) / float64(height)
+				y := -(2*(float64(j)+0.5)/float64(height) - 1) * math.Tan(fov/2)
+				dir := (Vec3f{x, y, -1}).Normalize()
+				framebuffer.SetPixel(i, j, castRay(Vec3f{0, 0, 0}, dir, spheres, lights, 0))
+
+			}
+			wg.Done()
+		}(j)
 	}
+
+	wg.Wait()
 
 	return *framebuffer
 }
