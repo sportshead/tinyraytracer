@@ -48,7 +48,7 @@ func (b *Bitmap) SetPixel(x, y int, color Vec3f) error {
 		return errors.New("out of range")
 	}
 	for i := 0; i < 3; i++ {
-		b.Set(x, y, i, ftob(color[i]))
+		b.Set(x, y, i, floatToByte(color[i]))
 	}
 	b.Set(x, y, 3, 0xFF)
 	return nil

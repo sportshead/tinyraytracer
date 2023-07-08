@@ -64,18 +64,37 @@ func ftob(f float64) byte {
 	return byte(math.Max(0, math.Min(255, f*255+0.5)))
 }
 
-func sceneIntersect(orig, dir Vec3f, spheres []Sphere) (hit Vec3f, N Vec3f, material Material, intersect bool) {
-	spheresDist := math.MaxFloat64
-	for _, sphere := range spheres {
-		dist, rayIntersect := sphere.RayIntersect(orig, dir)
-		if rayIntersect && dist < spheresDist {
-			spheresDist = dist
-			hit = orig.Add(dir.Mul(dist))
-			N = hit.Sub(sphere.Center).Normalize()
-			material = sphere.Material
+func sceneIntersect(orig, dir Vec3f, spheres []Sphere) (pt Vec3f, N Vec3f, material Material, intersect bool) {
+	material = Material{1, Vec4f{1, 0, 0, 0}, Vec3f{0, 0, 0}, 0}
+
+	nearestDist := 1e10
+	if math.Abs(dir[1]) > .001 { // intersect the ray with the checkerboard, avoid division by zero
+		d := -(orig[1] + 4) / dir[1] // the checkerboard plane has equation y = -4
+		p := orig.Add(dir.Mul(d))
+		if d > .001 && d < nearestDist && math.Abs(p[0]) < 10 && p[2] < -10 && p[2] > -30 {
+			nearestDist = d
+			pt = p
+			N = Vec3f{0, 1, 0}
+			if int(0.5*pt[0]+1000)+int(0.5*pt[2])&1 == 1 {
+				material.DiffuseColor = Vec3f{0.3, 0.3, 0.3}
+			} else {
+				material.DiffuseColor = Vec3f{0.3, 0.2, 0.1}
+			}
 		}
 	}
-	intersect = spheresDist < 1000
+
+	for _, sphere := range spheres {
+		dist, rayIntersect := sphere.RayIntersect(orig, dir)
+		if !rayIntersect || dist > nearestDist {
+			continue
+		}
+		nearestDist = dist
+		pt = orig.Add(dir.Mul(dist))
+		N = pt.Sub(sphere.Center).Normalize()
+		material = sphere.Material
+	}
+
+	intersect = nearestDist < 1000
 	return
 }
 
