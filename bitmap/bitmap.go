@@ -1,7 +1,7 @@
 package bitmap
 
 import (
-	"errors"
+	"fmt"
 	"math"
 
 	. "github.com/sportshead/tinyraytracer/vectors"
@@ -23,7 +23,7 @@ func NewBitmap(width, height int) *Bitmap {
 
 func (b *Bitmap) Set(x, y, index int, value byte) error {
 	if x < 0 || x >= b.Width || y < 0 || y >= b.Height || index < 0 || index >= 4 {
-		return errors.New("out of range")
+		return fmt.Errorf("out of range: (%d, %d, %d)", x, y, index)
 	}
 	b.Data[(y*b.Width+x)*4+index] = value
 	return nil
@@ -31,14 +31,14 @@ func (b *Bitmap) Set(x, y, index int, value byte) error {
 
 func (b *Bitmap) Get(x, y, index int) (byte, error) {
 	if x < 0 || x >= b.Width || y < 0 || y >= b.Height || index < 0 || index >= 4 {
-		return 0, errors.New("out of range")
+		return 0, fmt.Errorf("out of range: (%d, %d, %d)", x, y, index)
 	}
 	return b.Data[(y*b.Width+x)*4+index], nil
 }
 
 func (b *Bitmap) SetPixel(x, y int, color Vec3f) error {
 	if x < 0 || x >= b.Width || y < 0 || y >= b.Height {
-		return errors.New("out of range")
+		return fmt.Errorf("out of range: (%d, %d)", x, y)
 	}
 	for i := 0; i < 3; i++ {
 		b.Set(x, y, i, floatToByte(color[i]))
@@ -49,7 +49,7 @@ func (b *Bitmap) SetPixel(x, y int, color Vec3f) error {
 
 func (b *Bitmap) GetPixel(x, y int) (Vec3f, error) {
 	if x < 0 || x >= b.Width || y < 0 || y >= b.Height {
-		return Vec3f{}, errors.New("out of range")
+		return Vec3f{}, fmt.Errorf("out of range: (%d, %d)", x, y)
 	}
 	var color Vec3f
 	for i := 0; i < 3; i++ {
