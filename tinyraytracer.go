@@ -23,39 +23,11 @@ func main() {
 	canvas.Set("width", width)
 	canvas.Set("height", height)
 
-	ivory := Material{
-		RefractiveIndex:  1.0,
-		Albedo:           Vec4f{0.6, 0.3, 0.1, 0.0},
-		DiffuseColor:     Vec3f{0.4, 0.4, 0.3},
-		SpecularExponent: 50.0,
-	}
-
-	glass := Material{
-		RefractiveIndex:  1.5,
-		Albedo:           Vec4f{0.0, 0.5, 0.1, 0.8},
-		DiffuseColor:     Vec3f{0.6, 0.7, 0.8},
-		SpecularExponent: 125.0,
-	}
-
-	redRubber := Material{
-		RefractiveIndex:  1.0,
-		Albedo:           Vec4f{0.9, 0.1, 0.0, 0.0},
-		DiffuseColor:     Vec3f{0.3, 0.1, 0.1},
-		SpecularExponent: 10.0,
-	}
-
-	mirror := Material{
-		RefractiveIndex:  1.0,
-		Albedo:           Vec4f{0.0, 10.0, 0.8, 0.0},
-		DiffuseColor:     Vec3f{1.0, 1.0, 1.0},
-		SpecularExponent: 1425.0,
-	}
-
 	spheres := []Sphere{
-		{Vec3f{-3, 0, -16}, 2, ivory},
-		{Vec3f{-1, -1.5, -12}, 2, glass},
-		{Vec3f{1.5, -0.5, -18}, 3, redRubber},
-		{Vec3f{7, 5, -18}, 4, mirror},
+		{Vec3f{-3, 0, -16}, 2, Materials[Ivory]},
+		{Vec3f{-1, -1.5, -12}, 2, Materials[Glass]},
+		{Vec3f{1.5, -0.5, -18}, 3, Materials[RedRubber]},
+		{Vec3f{7, 5, -18}, 4, Materials[Mirror]},
 	}
 
 	lights := []Light{
