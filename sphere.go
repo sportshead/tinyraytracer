@@ -12,18 +12,17 @@ func (s *Sphere) RayIntersect(orig, dir Vec3f) (float64, bool) {
 	L := s.Center.Sub(orig)
 	tca := L.Dot(dir)
 	d2 := L.Dot(L) - tca*tca
-	rSq := s.Radius * s.Radius
-	if d2 > rSq {
+	if d2 > s.Radius*s.Radius {
 		return 0, false
 	}
-	thc := math.Sqrt(rSq - d2)
+	thc := math.Sqrt(s.Radius*s.Radius - d2)
 	t0 := tca - thc
 	t1 := tca + thc
-	if t0 < 0 {
-		t0 = t1
+	if t0 > 0.001 {
+		return t0, true
 	}
-	if t0 < 0 {
-		return t0, false
+	if t1 > 0.001 {
+		return t1, true
 	}
-	return t0, true
+	return 0, false
 }
