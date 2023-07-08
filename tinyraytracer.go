@@ -4,6 +4,9 @@ import (
 	"math"
 	"sync"
 	"syscall/js"
+
+	"github.com/sportshead/tinyraytracer/bitmap"
+	. "github.com/sportshead/tinyraytracer/vectors"
 )
 
 const fov = math.Pi / 2
@@ -38,8 +41,8 @@ func main() {
 
 	frameBuffer := render(spheres, lights)
 
-	jsBuffer := js.Global().Get("Uint8ClampedArray").New(len(frameBuffer.Data()))
-	js.CopyBytesToJS(jsBuffer, frameBuffer.Data())
+	jsBuffer := js.Global().Get("Uint8ClampedArray").New(len(frameBuffer.Data))
+	js.CopyBytesToJS(jsBuffer, frameBuffer.Data)
 	imageData := js.Global().Get("ImageData").New(
 		jsBuffer,
 		width,
@@ -58,10 +61,6 @@ func main() {
 	}))
 
 	ctx.Call("transferFromImageBitmap", <-done)
-}
-
-func floatToByte(f float64) byte {
-	return byte(math.Max(0, math.Min(255, f*255+0.5)))
 }
 
 func sceneIntersect(orig, dir Vec3f, spheres []Sphere) (pt Vec3f, N Vec3f, material Material, intersect bool) {
@@ -139,8 +138,8 @@ func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light, depth int) Vec3f
 	return material.DiffuseColor.Mul(diffuseLightIntensity * material.Albedo[0]).Add(Vec3f{1.0, 1.0, 1.0}.Mul(specularLightIntensity * material.Albedo[1])).Add(reflectColor.Mul(material.Albedo[2])).Add(refractColor.Mul(material.Albedo[3]))
 }
 
-func render(spheres []Sphere, lights []Light) Bitmap {
-	frameBuffer := NewBitmap(width, height)
+func render(spheres []Sphere, lights []Light) bitmap.Bitmap {
+	frameBuffer := bitmap.NewBitmap(width, height)
 
 	wg := sync.WaitGroup{}
 	wg.Add(height)

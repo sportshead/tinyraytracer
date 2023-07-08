@@ -1,5 +1,7 @@
 package main
 
+import . "github.com/sportshead/tinyraytracer/vectors"
+
 type Material struct {
 	RefractiveIndex  float64
 	Albedo           Vec4f

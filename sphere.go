@@ -1,6 +1,10 @@
 package main
 
-import "math"
+import (
+	"math"
+
+	. "github.com/sportshead/tinyraytracer/vectors"
+)
 
 type Sphere struct {
 	Center   Vec3f
