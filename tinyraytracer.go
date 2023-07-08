@@ -16,9 +16,50 @@ var (
 	height int
 )
 
+var ctx js.Value
+
 func main() {
+	done := make(chan struct{})
+
+	js.Global().Call("fetch", "envmap.jpg").Call("then", js.FuncOf(func(this js.Value, args []js.Value) any {
+		res := args[0]
+		return res.Call("blob")
+	})).Call("then", js.FuncOf(func(this js.Value, args []js.Value) any {
+		blob := args[0]
+		return js.Global().Call("createImageBitmap", blob)
+	})).Call("then", js.FuncOf(func(this js.Value, args []js.Value) any {
+		jsBitmap := args[0]
+
+		offscreenCanvas := js.Global().Get("OffscreenCanvas").New(jsBitmap.Get("width"), jsBitmap.Get("height"))
+		context := offscreenCanvas.Call("getContext", "2d")
+		context.Call("drawImage", jsBitmap, 0, 0)
+
+		return context.Call("getImageData", 0, 0, jsBitmap.Get("width"), jsBitmap.Get("height"))
+	})).Call("then", js.FuncOf(start)).Call("then", js.FuncOf(func(this js.Value, args []js.Value) any {
+		imageBitmap := args[0]
+		ctx.Call("transferFromImageBitmap", imageBitmap)
+		close(done)
+		return nil
+	}))
+	<-done
+}
+
+// start(envmap: ImageData): Promise<ImageBitmap>
+func start(this js.Value, args []js.Value) any {
+	envmapImageData := args[0]
+	envmapJsBuffer := envmapImageData.Get("data")
+	envmapBuffer := make([]byte, envmapJsBuffer.Length())
+
+	js.CopyBytesToGo(envmapBuffer, envmapJsBuffer)
+
+	envmap := bitmap.Bitmap{
+		Data:   envmapBuffer,
+		Width:  envmapImageData.Get("width").Int(),
+		Height: envmapImageData.Get("height").Int(),
+	}
+
 	canvas := js.Global().Get("document").Call("getElementById", "main")
-	ctx := canvas.Call("getContext", "bitmaprenderer")
+	ctx = canvas.Call("getContext", "bitmaprenderer")
 
 	width = canvas.Get("clientWidth").Int()
 	height = canvas.Get("clientHeight").Int()
@@ -39,7 +80,7 @@ func main() {
 		{Vec3f{30, 20, 30}, 1.7},
 	}
 
-	frameBuffer := render(spheres, lights)
+	frameBuffer := render(spheres, lights, envmap)
 
 	jsBuffer := js.Global().Get("Uint8ClampedArray").New(len(frameBuffer.Data))
 	js.CopyBytesToJS(jsBuffer, frameBuffer.Data)
@@ -50,17 +91,7 @@ func main() {
 	)
 
 	imageBitmap := js.Global().Call("createImageBitmap", imageData)
-
-	done := make(chan js.Value)
-
-	imageBitmap.Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		result := args[0]
-
-		done <- result
-		return nil
-	}))
-
-	ctx.Call("transferFromImageBitmap", <-done)
+	return imageBitmap
 }
 
 func sceneIntersect(orig, dir Vec3f, spheres []Sphere) (pt Vec3f, N Vec3f, material Material, intersect bool) {
@@ -104,10 +135,16 @@ func calcOrig(dir, point, N Vec3f) Vec3f {
 	return point.Add(N.Mul(1e-3))
 }
 
-func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light, depth int) Vec3f {
+func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light, depth int, envmap bitmap.Bitmap) Vec3f {
 	point, N, material, intersect := sceneIntersect(orig, dir, spheres)
 	if depth > 4 || !intersect {
-		return Vec3f{0.2, 0.7, 0.8} // background color
+		normalized := dir.Normalize()
+		// https://github.com/tpaschalis/go-tinyraytracer/blob/b95d3b3be7a231154881944dd6953955b9af2ae4/main.go#L107
+		pixel, err := envmap.GetPixel(int((normalized[0]/2+0.5)*0.5*float64(envmap.Width)), int((1-(normalized[1]/2+0.5))*float64(envmap.Height)))
+		if err != nil {
+			panic(err)
+		}
+		return pixel
 	}
 
 	reflectDir := dir.Reflect(N)
@@ -116,8 +153,8 @@ func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light, depth int) Vec3f
 	reflectOrig := calcOrig(reflectDir, point, N)
 	refractOrig := calcOrig(refractDir, point, N)
 
-	reflectColor := castRay(reflectOrig, reflectDir, spheres, lights, depth+1)
-	refractColor := castRay(refractOrig, refractDir, spheres, lights, depth+1)
+	reflectColor := castRay(reflectOrig, reflectDir, spheres, lights, depth+1, envmap)
+	refractColor := castRay(refractOrig, refractDir, spheres, lights, depth+1, envmap)
 
 	diffuseLightIntensity := 0.0
 	specularLightIntensity := 0.0
@@ -138,7 +175,7 @@ func castRay(orig, dir Vec3f, spheres []Sphere, lights []Light, depth int) Vec3f
 	return material.DiffuseColor.Mul(diffuseLightIntensity * material.Albedo[0]).Add(Vec3f{1.0, 1.0, 1.0}.Mul(specularLightIntensity * material.Albedo[1])).Add(reflectColor.Mul(material.Albedo[2])).Add(refractColor.Mul(material.Albedo[3]))
 }
 
-func render(spheres []Sphere, lights []Light) bitmap.Bitmap {
+func render(spheres []Sphere, lights []Light, envmap bitmap.Bitmap) bitmap.Bitmap {
 	frameBuffer := bitmap.NewBitmap(width, height)
 
 	wg := sync.WaitGroup{}
@@ -149,7 +186,7 @@ func render(spheres []Sphere, lights []Light) bitmap.Bitmap {
 				x := (2*(float64(i)+0.5)/float64(width) - 1) * math.Tan(fov/2) * float64(width) / float64(height)
 				y := -(2*(float64(j)+0.5)/float64(height) - 1) * math.Tan(fov/2)
 				dir := (Vec3f{x, y, -1}).Normalize()
-				frameBuffer.SetPixel(i, j, castRay(Vec3f{0, 0, 0}, dir, spheres, lights, 0))
+				frameBuffer.SetPixel(i, j, castRay(Vec3f{0, 0, 0}, dir, spheres, lights, 0, envmap))
 			}
 			wg.Done()
 		}(j)
