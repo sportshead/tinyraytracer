@@ -1,5 +1,6 @@
 # tinyraytracer
-My own version of a [tinyraytracer](https://github.com/ssloy/tinyraytracer), using Go (targeting WASM) and HTML canvas as a frontend.
+[![Build and Publish](https://github.com/sportshead/tinyraytracer/actions/workflows/build.yml/badge.svg)](https://github.com/sportshead/tinyraytracer/actions/workflows/build.yml)
+My own version of a [tinyraytracer](https://github.com/ssloy/tinyraytracer), using Go (targeting Wasm) and HTML canvas as a frontend. Run it in your own browser [here](https://sportshead.github.io/tinyraytracer/).
 
 ## Concepts learned/used
 - **Raytracing**
